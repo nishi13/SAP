@@ -26,8 +26,12 @@ namespace SAP
     public partial class MainWindow : Window
     {
         private Capture capture;
-        private Timer timer;
         private Image<Bgr, byte> model;
+        private Thread thread;
+        Point startingPoint;
+        Point endingPoint;
+        Point startDisplay;
+        Point endDisplay;
 
         [DllImport("gdi32")]
         private static extern int DeleteObject(IntPtr o);
@@ -58,25 +62,59 @@ namespace SAP
         {
             InitializeComponent();
             model = new Image<Bgr, byte>("model.png");
-            capture = new Capture("penalty.mp4");
-            timer = new Timer(GetPic, null, 0, 1000);
+            capture = new Capture("DSCN3998.MOV");
+            thread = new Thread(new ThreadStart(GetPic));
+            var queryframe = capture.QueryFrame();
+            display.Source = ToBitmapSource(queryframe);
         }
 
-        private void GetPic(object state)
+        private void GetPic()
         {
             var queryframe = capture.QueryFrame();
             if (queryframe != null)
             {
-                long time;
-                var detected = SurfUtil.Draw(queryframe, model.Mat, out time);
+                float x = (float)((float)startDisplay.X < endDisplay.X ? startDisplay.X : endDisplay.X) / (float)display.ActualWidth;
+                float y = (float)((float)startDisplay.Y < endDisplay.Y ? startDisplay.Y : endDisplay.Y) / (float)display.ActualHeight;
+                float width = ((float)Math.Abs(startDisplay.X - endDisplay.X)) / (float)display.ActualWidth;
+                float height = ((float)Math.Abs(startDisplay.Y - endDisplay.Y)) / (float)display.ActualHeight;
+                var detected = SurfUtil.TrackRect(queryframe, ref x, ref y, ref height, ref width);
                 this.Dispatcher.Invoke((Action)(() =>
                 {
                      display.Source = ToBitmapSource(detected);
                 }));
             }
-            else
+        }
+
+        bool isPressed = false;
+
+        private void display_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
             {
-                timer.Dispose();
+                startingPoint = e.GetPosition(Grid);
+                startDisplay = e.GetPosition(display);
+                isPressed = true;
+            }
+
+        }
+
+        private void display_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            isPressed = false;
+            thread.Start();
+        }
+
+        private void display_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (isPressed)
+            {
+                endingPoint = e.GetPosition(Grid);
+                endDisplay = e.GetPosition(display);
+                var x = startingPoint.X < endingPoint.X ? startingPoint.X : endingPoint.X;
+                var y = startingPoint.Y < endingPoint.Y ? startingPoint.Y : endingPoint.Y;
+                rectangle.Width = Math.Abs(startingPoint.X - endingPoint.X);
+                rectangle.Height = Math.Abs(startingPoint.Y - endingPoint.Y);
+                rectangle.Margin = new Thickness(x, y, 0, 0);
             }
         }
     }

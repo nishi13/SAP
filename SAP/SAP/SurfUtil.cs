@@ -132,7 +132,7 @@ namespace SAP
                 //Draw the matched keypoints
                 Mat result = new Mat();
                 Features2DToolbox.DrawMatches(modelImage, modelKeyPoints, observedImage, observedKeyPoints,
-                   matches, result, new MCvScalar(255, 255, 255), new MCvScalar(255, 255, 255), mask);
+                   matches, result, new MCvScalar(255, 255, 255), new MCvScalar(255, 255, 255), mask, Features2DToolbox.KeypointDrawType.NotDrawSinglePoints);
 
                 #region draw the projected region on the image
 
@@ -162,6 +162,60 @@ namespace SAP
                 return result;
 
             }
+        }
+
+        public static Mat TrackRect(Mat observedImage, ref float x, ref float y, ref float height, ref float width)
+        {
+            int iX = (int) Math.Floor(x * observedImage.Height);
+            int iY = (int)Math.Floor(y * observedImage.Width);
+            int iHeight = (int)Math.Ceiling(height * observedImage.Height);
+            int iWidth = (int)Math.Ceiling(width * observedImage.Width);
+            var rect = new Rectangle(iX, iY, iWidth, iHeight);
+            var model = observedImage.ToImage<Bgr, byte>();
+            model.ROI = rect;
+            return model.Mat;
+            Mat homography;
+            VectorOfKeyPoint modelKeyPoints;
+            VectorOfKeyPoint observedKeyPoints;
+            Mat mask;
+            long matchTime;
+            VectorOfVectorOfDMatch matches = new VectorOfVectorOfDMatch();
+            FindMatch(model.Mat, observedImage, out matchTime, out modelKeyPoints, out observedKeyPoints, matches,
+               out mask, out homography);
+
+            //return observedImage;
+
+
+            Mat result = new Mat();
+            Features2DToolbox.DrawMatches(model, modelKeyPoints, observedImage, observedKeyPoints,
+               matches, result, new MCvScalar(255, 255, 255), new MCvScalar(255, 255, 255), mask, Features2DToolbox.KeypointDrawType.NotDrawSinglePoints);
+
+            #region draw the projected region on the image
+
+            if (homography != null)
+            {
+                //draw a rectangle along the projected model
+                rect = new Rectangle(Point.Empty, model.Size);
+                PointF[] pts = new PointF[]
+                {
+                  new PointF(rect.Left, rect.Bottom),
+                  new PointF(rect.Right, rect.Bottom),
+                  new PointF(rect.Right, rect.Top),
+                  new PointF(rect.Left, rect.Top)
+                };
+                pts = CvInvoke.PerspectiveTransform(pts, homography);
+
+                Point[] points = Array.ConvertAll<PointF, Point>(pts, Point.Round);
+                using (VectorOfPoint vp = new VectorOfPoint(points))
+                {
+                    CvInvoke.Polylines(result, vp, true, new MCvScalar(255, 0, 0, 255), 5);
+                }
+
+            }
+
+            #endregion
+
+            return result;
         }
     }
 }

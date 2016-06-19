@@ -6,13 +6,8 @@
         xmlns:local="clr-namespace:SAP"
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="auto"/>
-        </Grid.RowDefinitions>
-        <Border Background="Black">
-            <Image Name="display"></Image>
-        </Border>
+    <Grid Background="Black" Name="Grid" MouseDown="display_MouseDown" MouseUp="display_MouseUp" MouseMove="display_MouseMove">
+        <Image Name="display"></Image>
+        <Rectangle Name="rectangle"  Fill="Transparent" Stroke="Yellow" Width="0" Height="0" StrokeThickness="2" HorizontalAlignment="Left" VerticalAlignment="Top"></Rectangle>
     </Grid>
 </Window>

@@ -131,6 +131,9 @@
     <Resource Include="License-LGPL.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="DSCN3998.MOV">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="model.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
