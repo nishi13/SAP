@@ -166,14 +166,14 @@ namespace SAP
 
         public static Mat TrackRect(Mat observedImage, ref float x, ref float y, ref float height, ref float width)
         {
-            int iX = (int) Math.Floor(x * observedImage.Height);
-            int iY = (int)Math.Floor(y * observedImage.Width);
-            int iHeight = (int)Math.Ceiling(height * observedImage.Height);
+            int iX = (int) Math.Floor(x * observedImage.Width);
+            int iY = (int)Math.Floor(y * observedImage.Height);
             int iWidth = (int)Math.Ceiling(width * observedImage.Width);
+            int iHeight = (int)Math.Ceiling(height * observedImage.Height);
             var rect = new Rectangle(iX, iY, iWidth, iHeight);
             var model = observedImage.ToImage<Bgr, byte>();
             model.ROI = rect;
-            return model.Mat;
+
             Mat homography;
             VectorOfKeyPoint modelKeyPoints;
             VectorOfKeyPoint observedKeyPoints;
@@ -182,9 +182,6 @@ namespace SAP
             VectorOfVectorOfDMatch matches = new VectorOfVectorOfDMatch();
             FindMatch(model.Mat, observedImage, out matchTime, out modelKeyPoints, out observedKeyPoints, matches,
                out mask, out homography);
-
-            //return observedImage;
-
 
             Mat result = new Mat();
             Features2DToolbox.DrawMatches(model, modelKeyPoints, observedImage, observedKeyPoints,

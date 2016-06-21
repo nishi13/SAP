@@ -82,6 +82,7 @@ namespace SAP
                 {
                      display.Source = ToBitmapSource(detected);
                 }));
+                GetPic();
             }
         }
 
