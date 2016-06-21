@@ -77,7 +77,7 @@ namespace SAP
                 float y = (float)((float)startDisplay.Y < endDisplay.Y ? startDisplay.Y : endDisplay.Y) / (float)display.ActualHeight;
                 float width = ((float)Math.Abs(startDisplay.X - endDisplay.X)) / (float)display.ActualWidth;
                 float height = ((float)Math.Abs(startDisplay.Y - endDisplay.Y)) / (float)display.ActualHeight;
-                var detected = SurfUtil.TrackRect(queryframe, ref x, ref y, ref height, ref width);
+                var detected = HogUtil.Track(queryframe, x, y, height, width);
                 this.Dispatcher.Invoke((Action)(() =>
                 {
                      display.Source = ToBitmapSource(detected);
@@ -103,6 +103,8 @@ namespace SAP
         {
             isPressed = false;
             thread.Start();
+            rectangle.Width = 0;
+            rectangle.Height = 0;
         }
 
         private void display_MouseMove(object sender, MouseEventArgs e)
