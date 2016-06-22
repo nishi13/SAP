@@ -32,6 +32,8 @@ namespace SAP
         Point endingPoint;
         Point startDisplay;
         Point endDisplay;
+        Mat firstFrame;
+        System.Drawing.Point modelPoint;
 
         [DllImport("gdi32")]
         private static extern int DeleteObject(IntPtr o);
@@ -43,45 +45,49 @@ namespace SAP
         /// <returns>The equivalent BitmapSource</returns>
         public static BitmapSource ToBitmapSource(IImage image)
         {
-            using (System.Drawing.Bitmap source = image.Bitmap)
+            using (var stream = new MemoryStream())
             {
-                IntPtr ptr = source.GetHbitmap(); //obtain the Hbitmap
+                // My way to display frame 
+                image.Bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Bmp);
 
-                BitmapSource bs = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                    ptr,
-                    IntPtr.Zero,
-                    Int32Rect.Empty,
-                    System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
-
-                DeleteObject(ptr); //release the HBitmap
-                return bs;
-            }
+                BitmapImage bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.StreamSource = new MemoryStream(stream.ToArray());
+                bitmap.EndInit();
+                return bitmap;
+            };
         }
 
         public MainWindow()
         {
             InitializeComponent();
-            model = new Image<Bgr, byte>("model.png");
             capture = new Capture("DSCN3998.MOV");
-            thread = new Thread(new ThreadStart(GetPic));
-            var queryframe = capture.QueryFrame();
-            display.Source = ToBitmapSource(queryframe);
+            firstFrame = capture.QuerySmallFrame();
+            display.Source = ToBitmapSource(firstFrame);
         }
 
         private void GetPic()
         {
-            var queryframe = capture.QueryFrame();
+            var queryframe = capture.QuerySmallFrame();
             if (queryframe != null)
             {
-                float x = (float)((float)startDisplay.X < endDisplay.X ? startDisplay.X : endDisplay.X) / (float)display.ActualWidth;
-                float y = (float)((float)startDisplay.Y < endDisplay.Y ? startDisplay.Y : endDisplay.Y) / (float)display.ActualHeight;
-                float width = ((float)Math.Abs(startDisplay.X - endDisplay.X)) / (float)display.ActualWidth;
-                float height = ((float)Math.Abs(startDisplay.Y - endDisplay.Y)) / (float)display.ActualHeight;
-                var detected = HogUtil.Track(queryframe, x, y, height, width);
-                this.Dispatcher.Invoke((Action)(() =>
+                try
                 {
-                     display.Source = ToBitmapSource(detected);
-                }));
+                    bool success;
+                    var detected = MatchUtil.Track(queryframe.ToImage<Bgr, byte>(), model, ref modelPoint, out success);
+                    if (success)
+                    {
+                        model = MatchUtil.GetModel(queryframe, modelPoint, model.Size);
+                    }
+                    this.Dispatcher.Invoke((Action)(() =>
+                    {
+                        display.Source = ToBitmapSource(detected);
+                    }));
+                }
+                catch (Exception e)
+                {
+                    e.ToString();
+                }
                 GetPic();
             }
         }
@@ -95,6 +101,11 @@ namespace SAP
                 startingPoint = e.GetPosition(Grid);
                 startDisplay = e.GetPosition(display);
                 isPressed = true;
+                if (thread != null)
+                {
+                    thread.Abort();
+                    thread = null;
+                }
             }
 
         }
@@ -102,9 +113,15 @@ namespace SAP
         private void display_MouseUp(object sender, MouseButtonEventArgs e)
         {
             isPressed = false;
-            thread.Start();
             rectangle.Width = 0;
             rectangle.Height = 0;
+            float x = (float)((float)startDisplay.X < endDisplay.X ? startDisplay.X : endDisplay.X) / (float)display.ActualWidth;
+            float y = (float)((float)startDisplay.Y < endDisplay.Y ? startDisplay.Y : endDisplay.Y) / (float)display.ActualHeight;
+            float width = ((float)Math.Abs(startDisplay.X - endDisplay.X)) / (float)display.ActualWidth;
+            float height = ((float)Math.Abs(startDisplay.Y - endDisplay.Y)) / (float)display.ActualHeight;
+            model = MatchUtil.GetModel(firstFrame, x, y, width, height);
+            thread = new Thread(new ThreadStart(GetPic));
+            thread.Start();
         }
 
         private void display_MouseMove(object sender, MouseEventArgs e)
