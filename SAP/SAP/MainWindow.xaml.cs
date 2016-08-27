@@ -2,6 +2,8 @@
 using Emgu.CV.Structure;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -13,7 +15,6 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -28,12 +29,15 @@ namespace SAP
         private Capture capture;
         private Image<Bgr, byte> model;
         private Thread thread;
-        Point startingPoint;
-        Point endingPoint;
-        Point startDisplay;
-        Point endDisplay;
+        System.Windows.Point startingPoint;
+        System.Windows.Point endingPoint;
+        System.Windows.Point startDisplay;
+        System.Windows.Point endDisplay;
         Mat firstFrame;
         System.Drawing.Point modelPoint;
+
+        private List<Brush> colorList = new List<Brush> { Brushes.Yellow, Brushes.Red, Brushes.Blue, Brushes.Green, Brushes.Orange, Brushes.Purple };
+        public ObservableCollection<ObejctTrack> ObjectsTracking { get; set; }
 
         [DllImport("gdi32")]
         private static extern int DeleteObject(IntPtr o);
@@ -66,7 +70,16 @@ namespace SAP
             display.Source = ToBitmapSource(firstFrame);
         }
 
-        private void GetPic()
+        private void processingThread()
+        {
+            bool hasNext = true;
+            while (hasNext)
+            {
+                hasNext = GetPic();
+            }
+        }
+
+        private bool GetPic()
         {
             var queryframe = capture.QuerySmallFrame();
             if (queryframe != null)
@@ -88,8 +101,9 @@ namespace SAP
                 {
                     e.ToString();
                 }
-                GetPic();
+                return true;
             }
+            return false;
         }
 
         bool isPressed = false;
@@ -120,8 +134,6 @@ namespace SAP
             float width = ((float)Math.Abs(startDisplay.X - endDisplay.X)) / (float)display.ActualWidth;
             float height = ((float)Math.Abs(startDisplay.Y - endDisplay.Y)) / (float)display.ActualHeight;
             model = MatchUtil.GetModel(firstFrame, x, y, width, height);
-            thread = new Thread(new ThreadStart(GetPic));
-            thread.Start();
         }
 
         private void display_MouseMove(object sender, MouseEventArgs e)
@@ -135,6 +147,26 @@ namespace SAP
                 rectangle.Width = Math.Abs(startingPoint.X - endingPoint.X);
                 rectangle.Height = Math.Abs(startingPoint.Y - endingPoint.Y);
                 rectangle.Margin = new Thickness(x, y, 0, 0);
+            }
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (thread != null)
+            {
+                thread.Abort();
+                thread = null;
+                capture.Dispose();
+                capture = new Capture("DSCN3998.MOV");
+                firstFrame = capture.QuerySmallFrame();
+                display.Source = ToBitmapSource(firstFrame);
+                StartButton.Content = "Start";
+            }
+            else
+            {
+                thread = new Thread(new ThreadStart(processingThread));
+                thread.Start();
+                StartButton.Content = "Restart";
             }
         }
     }

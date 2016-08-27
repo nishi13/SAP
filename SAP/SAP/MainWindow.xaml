@@ -6,8 +6,23 @@
         xmlns:local="clr-namespace:SAP"
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
-    <Grid Background="Black" Name="Grid" MouseDown="display_MouseDown" MouseUp="display_MouseUp" MouseMove="display_MouseMove">
+    <Grid Background="White" Name="Grid" MouseDown="display_MouseDown" MouseUp="display_MouseUp" MouseMove="display_MouseMove">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="auto"/>
+        </Grid.ColumnDefinitions>
         <Image Name="display"></Image>
         <Rectangle Name="rectangle"  Fill="Transparent" Stroke="Yellow" Width="0" Height="0" StrokeThickness="2" HorizontalAlignment="Left" VerticalAlignment="Top"></Rectangle>
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal">
+            <Button x:Name="StartButton" Content="Start" Click="Button_Click"/>
+            <TextBlock Text="n:" Margin="5 0 0 0"/>
+            <TextBlock Text="{Binding Value, ElementName=n_images}"/>
+            <Slider Name="n_images" Minimum="1" Maximum="100" IsSnapToTickEnabled="True" Value="10" Width="200"/>
+        </StackPanel>
+        <ListView Name="TrackingList" Grid.Column="1"/>
     </Grid>
 </Window>
