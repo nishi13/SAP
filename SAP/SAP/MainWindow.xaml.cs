@@ -37,7 +37,6 @@ namespace SAP
         System.Drawing.Point modelPoint;
 
         private List<Brush> colorList = new List<Brush> { Brushes.Yellow, Brushes.Red, Brushes.Blue, Brushes.Green, Brushes.Orange, Brushes.Purple };
-        public ObservableCollection<ObejctTrack> ObjectsTracking { get; set; }
 
         [DllImport("gdi32")]
         private static extern int DeleteObject(IntPtr o);
@@ -67,6 +66,7 @@ namespace SAP
             InitializeComponent();
             capture = new Capture("DSCN3998.MOV");
             firstFrame = capture.QuerySmallFrame();
+            prevImage = firstFrame.ToImage<Bgr, byte>();
             display.Source = ToBitmapSource(firstFrame);
         }
 
@@ -79,6 +79,8 @@ namespace SAP
             }
         }
 
+        private Image<Bgr, byte> prevImage;
+
         private bool GetPic()
         {
             var queryframe = capture.QuerySmallFrame();
@@ -86,16 +88,13 @@ namespace SAP
             {
                 try
                 {
-                    bool success;
-                    var detected = MatchUtil.Track(queryframe.ToImage<Bgr, byte>(), model, ref modelPoint, out success);
-                    if (success)
-                    {
-                        model = MatchUtil.GetModel(queryframe, modelPoint, model.Size);
-                    }
+                    var image = prevImage.AbsDiff(queryframe.ToImage<Bgr, byte>());
+                    prevImage = queryframe.ToImage<Bgr, byte>();
                     this.Dispatcher.Invoke((Action)(() =>
                     {
-                        display.Source = ToBitmapSource(detected);
+                        display.Source = ToBitmapSource(image);
                     }));
+
                 }
                 catch (Exception e)
                 {
