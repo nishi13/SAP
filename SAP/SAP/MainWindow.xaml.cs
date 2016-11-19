@@ -35,6 +35,7 @@ namespace SAP
         System.Windows.Point endDisplay;
         Mat firstFrame;
         System.Drawing.Point modelPoint;
+        ColorObject colorObj;
 
         private List<Brush> colorList = new List<Brush> { Brushes.Yellow, Brushes.Red, Brushes.Blue, Brushes.Green, Brushes.Orange, Brushes.Purple };
 
@@ -72,10 +73,17 @@ namespace SAP
 
         private void processingThread()
         {
-            bool hasNext = true;
-            while (hasNext)
+            while (true)
             {
-                hasNext = GetPic();
+                bool hasNext = true;
+                while (hasNext)
+                {
+                    hasNext = GetPic();
+                }
+
+                capture = new Capture("DSCN3998.MOV");
+                firstFrame = capture.QuerySmallFrame();
+                prevImage = firstFrame.ToImage<Bgr, byte>();
             }
         }
 
@@ -88,13 +96,13 @@ namespace SAP
             {
                 try
                 {
-                    var image = prevImage.AbsDiff(queryframe.ToImage<Bgr, byte>());
+                    //var image = Tracking.Color(prevImage.Mat, queryframe, colorObj);
+                    var image = Tracking.Motion(prevImage.Mat, queryframe);
                     prevImage = queryframe.ToImage<Bgr, byte>();
                     this.Dispatcher.Invoke((Action)(() =>
                     {
                         display.Source = ToBitmapSource(image);
                     }));
-
                 }
                 catch (Exception e)
                 {
@@ -133,6 +141,15 @@ namespace SAP
             float width = ((float)Math.Abs(startDisplay.X - endDisplay.X)) / (float)display.ActualWidth;
             float height = ((float)Math.Abs(startDisplay.Y - endDisplay.Y)) / (float)display.ActualHeight;
             model = MatchUtil.GetModel(firstFrame, x, y, width, height);
+            int iX = (int)Math.Floor(x * firstFrame.Width);
+            int iY = (int)Math.Floor(y * firstFrame.Height);
+            int iWidth = (int)Math.Ceiling(width * firstFrame.Width);
+            int iHeight = (int)Math.Ceiling(height * firstFrame.Height);
+            var rec = new System.Drawing.Rectangle(iX, iY, iWidth, iHeight);
+            var im = firstFrame.ToImage<Bgr, byte>();
+            im.ROI = rec;
+            display.Source = ToBitmapSource(firstFrame);
+            colorObj = Tracking.GetColorObject(firstFrame, new System.Drawing.Rectangle(iX, iY, iWidth, iHeight));
         }
 
         private void display_MouseMove(object sender, MouseEventArgs e)
@@ -155,10 +172,10 @@ namespace SAP
             {
                 thread.Abort();
                 thread = null;
-                capture.Dispose();
-                capture = new Capture("DSCN3998.MOV");
-                firstFrame = capture.QuerySmallFrame();
-                display.Source = ToBitmapSource(firstFrame);
+                //capture.Dispose();
+                //capture = new Capture("DSCN3998.MOV");
+                //firstFrame = capture.QuerySmallFrame();
+                //display.Source = ToBitmapSource(firstFrame);
                 StartButton.Content = "Start";
             }
             else
