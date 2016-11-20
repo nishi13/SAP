@@ -107,6 +107,66 @@ namespace SAP
             return obj;
         }
 
+        public static Image<Bgr, byte> GetBody (Mat original, Image<Gray, byte> tracked)
+        {
+            var output = original.ToImage<Bgr, byte>();
+            for (var j = 0; j < tracked.Height; j++)
+            {
+                var found = false;
+                for (var i = 0; i < tracked.Width; i++)
+                {
+                    var color = tracked[j, i];
+                    if (color.Intensity > 125)
+                    {
+                        output.Draw("Head", new Point(i, j), FontFace.HersheyPlain, 1, new Bgr(0, 0, 255));
+                        found = true;
+                        break;
+                    }
+                }
+                if (found)
+                {
+                    break;
+                }
+            }
+            for (var i = 0; i < tracked.Width; i++)
+            {
+                var found = false;
+                for (var j = 0; j < tracked.Height; j++)
+                {
+                    var color = tracked[j, i];
+                    if (color.Intensity > 125)
+                    {
+                        output.Draw("LeftHand", new Point(i, j), FontFace.HersheyPlain, 1, new Bgr(0, 0, 255));
+                        found = true;
+                        break;
+                    }
+                }
+                if (found)
+                {
+                    break;
+                }
+            }
+            for (var i = tracked.Width -1; i >= 0 ; i--)
+            {
+                var found = false;
+                for (var j = 0; j < tracked.Height; j++)
+                {
+                    var color = tracked[j, i];
+                    if (color.Intensity > 125)
+                    {
+                        output.Draw("RightHand", new Point(i, j), FontFace.HersheyPlain, 1, new Bgr(0, 0, 255));
+                        found = true;
+                        break;
+                    }
+                }
+                if (found)
+                {
+                    break;
+                }
+            }
+            return output;
+        }
+
         private static Image<Gray, byte> Blur (Image<Gray, byte> image)
         {
             CvInvoke.Blur(image, image, new Size(10, 10), new Point(-1, -1));

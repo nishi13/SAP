@@ -1,5 +1,7 @@
 ﻿using Emgu.CV;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using Emgu.CV.Util;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -101,7 +103,7 @@ namespace SAP
                     prevImage = queryframe.ToImage<Bgr, byte>();
                     this.Dispatcher.Invoke((Action)(() =>
                     {
-                        display.Source = ToBitmapSource(image);
+                        display.Source = ToBitmapSource(Tracking.GetBody(prevImage.Mat, image));
                     }));
                 }
                 catch (Exception e)
