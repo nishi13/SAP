@@ -67,7 +67,8 @@ namespace SAP
         public MainWindow()
         {
             InitializeComponent();
-            capture = new Capture("DSCN3998.MOV");
+            capture = new Capture();
+            //capture = new Capture("DSCN3998.MOV");
             firstFrame = capture.QuerySmallFrame();
             prevImage = firstFrame.ToImage<Bgr, byte>();
             display.Source = ToBitmapSource(firstFrame);
@@ -83,8 +84,9 @@ namespace SAP
                     hasNext = GetPic();
                 }
 
-                capture = new Capture("DSCN3998.MOV");
-                firstFrame = capture.QuerySmallFrame();
+                capture = new Capture();
+                //capture = new Capture("DSCN3998.MOV");
+                firstFrame = capture.QueryFrame();
                 prevImage = firstFrame.ToImage<Bgr, byte>();
             }
         }
@@ -98,12 +100,11 @@ namespace SAP
             {
                 try
                 {
-                    //var image = Tracking.Color(prevImage.Mat, queryframe, colorObj);
-                    var image = Tracking.Motion(prevImage.Mat, queryframe);
                     prevImage = queryframe.ToImage<Bgr, byte>();
+                    var image = Tracking.Face(prevImage);
                     this.Dispatcher.Invoke((Action)(() =>
                     {
-                        display.Source = ToBitmapSource(Tracking.GetBody(prevImage.Mat, image));
+                        display.Source = ToBitmapSource(image);
                     }));
                 }
                 catch (Exception e)
@@ -151,7 +152,7 @@ namespace SAP
             var im = firstFrame.ToImage<Bgr, byte>();
             im.ROI = rec;
             display.Source = ToBitmapSource(firstFrame);
-            colorObj = Tracking.GetColorObject(firstFrame, new System.Drawing.Rectangle(iX, iY, iWidth, iHeight));
+            //colorObj = Tracking.GetColorObject(firstFrame, new System.Drawing.Rectangle(iX, iY, iWidth, iHeight));
         }
 
         private void display_MouseMove(object sender, MouseEventArgs e)

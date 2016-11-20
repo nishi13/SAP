@@ -138,6 +138,9 @@
     <Content Include="DSCN3998.MOV">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Resource Include="haarcascade_frontalface_alt_tree.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Content Include="model.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

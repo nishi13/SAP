@@ -13,6 +13,18 @@ namespace SAP
     class Tracking
     {
         private static int HsvThreshold = 300;
+        private static CascadeClassifier cassifier = new CascadeClassifier("haarcascade_frontalface_alt_tree.xml");
+
+        public static Image<Bgr, byte> Face (Image<Bgr, byte> image)
+        {
+            var faces = cassifier.DetectMultiScale(image, 1.1, 3);
+            foreach(var face in faces)
+            {
+                image.Draw(face, new Bgr(0, 0, 255), 2);
+            }
+            return image;
+        }
+
         public static Image<Gray, byte> Motion(Mat prevImage, Mat curImage)
         {
             var greyImage = curImage.ToImage<Gray, byte>();
