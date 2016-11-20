@@ -102,6 +102,7 @@ namespace SAP
                 {
                     prevImage = queryframe.ToImage<Bgr, byte>();
                     var image = Tracking.Face(prevImage);
+                    image = Tracking.Hands(image);
                     this.Dispatcher.Invoke((Action)(() =>
                     {
                         display.Source = ToBitmapSource(image);

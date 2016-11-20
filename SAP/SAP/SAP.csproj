@@ -141,6 +141,9 @@
     <Resource Include="haarcascade_frontalface_alt_tree.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="handHaar.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Content Include="model.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
