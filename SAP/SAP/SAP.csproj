@@ -84,8 +84,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="ColorObject.cs" />
+    <Compile Include="Models\ColorObject.cs" />
     <Compile Include="MatchUtil.cs" />
+    <Compile Include="Models\Face.cs" />
+    <Compile Include="Models\Hand.cs" />
+    <Compile Include="Models\TrackObject.cs" />
     <Compile Include="ObejctTrack.cs" />
     <Compile Include="SurfUtil.cs" />
     <Compile Include="Tracking.cs" />

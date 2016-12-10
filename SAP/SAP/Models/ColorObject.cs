@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SAP
+namespace SAP.Models
 {
-    class ColorObject
+    public class ColorObject
     {
         public Hsv MinHsv { get; set; }
         public Hsv MaxHsv { get; set; }

@@ -2,6 +2,7 @@
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
+using SAP.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -29,15 +30,11 @@ namespace SAP
     public partial class MainWindow : Window
     {
         private Capture capture;
-        private Image<Bgr, byte> model;
         private Thread thread;
-        System.Windows.Point startingPoint;
-        System.Windows.Point endingPoint;
-        System.Windows.Point startDisplay;
-        System.Windows.Point endDisplay;
         Mat firstFrame;
-        System.Drawing.Point modelPoint;
-        ColorObject colorObj;
+        public ColorObject colorObj { get; set; } = new ColorObject() { MinHsv = new Hsv(0, 0, 0), MaxHsv = new Hsv(255, 255, 255) };
+        List<Hand> hands = new List<Hand>();
+        List<Face> faces = new List<Face>();
 
         private List<Brush> colorList = new List<Brush> { Brushes.Yellow, Brushes.Red, Brushes.Blue, Brushes.Green, Brushes.Orange, Brushes.Purple };
 
@@ -101,11 +98,16 @@ namespace SAP
                 try
                 {
                     prevImage = queryframe.ToImage<Bgr, byte>();
-                    var image = Tracking.Face(prevImage);
-                    image = Tracking.Hands(image);
+                    faces = Tracking.Face(prevImage, faces);
+                    hands = Tracking.Hands(prevImage, hands);
+                    var image = Tracking.DrawRectangles(prevImage.Mat, faces, hands);
+                    //colorObj.MinHsv = new Hsv(MinHue.Value, MinSatuation.Value, MinValue.Value);
+                    //colorObj.MaxHsv = new Hsv(MaxHue.Value, MaxSatuation.Value, MaxValue.Value);
+                    var tracked = Tracking.DrawRaw(prevImage.Mat);
                     this.Dispatcher.Invoke((Action)(() =>
                     {
                         display.Source = ToBitmapSource(image);
+                        display2.Source = ToBitmapSource(tracked);
                     }));
                 }
                 catch (Exception e)
@@ -118,76 +120,11 @@ namespace SAP
         }
 
         bool isPressed = false;
-
-        private void display_MouseDown(object sender, MouseButtonEventArgs e)
+        
+        private void Window_ContentRendered(object sender, EventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                startingPoint = e.GetPosition(Grid);
-                startDisplay = e.GetPosition(display);
-                isPressed = true;
-                if (thread != null)
-                {
-                    thread.Abort();
-                    thread = null;
-                }
-            }
-
-        }
-
-        private void display_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            isPressed = false;
-            rectangle.Width = 0;
-            rectangle.Height = 0;
-            float x = (float)((float)startDisplay.X < endDisplay.X ? startDisplay.X : endDisplay.X) / (float)display.ActualWidth;
-            float y = (float)((float)startDisplay.Y < endDisplay.Y ? startDisplay.Y : endDisplay.Y) / (float)display.ActualHeight;
-            float width = ((float)Math.Abs(startDisplay.X - endDisplay.X)) / (float)display.ActualWidth;
-            float height = ((float)Math.Abs(startDisplay.Y - endDisplay.Y)) / (float)display.ActualHeight;
-            model = MatchUtil.GetModel(firstFrame, x, y, width, height);
-            int iX = (int)Math.Floor(x * firstFrame.Width);
-            int iY = (int)Math.Floor(y * firstFrame.Height);
-            int iWidth = (int)Math.Ceiling(width * firstFrame.Width);
-            int iHeight = (int)Math.Ceiling(height * firstFrame.Height);
-            var rec = new System.Drawing.Rectangle(iX, iY, iWidth, iHeight);
-            var im = firstFrame.ToImage<Bgr, byte>();
-            im.ROI = rec;
-            display.Source = ToBitmapSource(firstFrame);
-            //colorObj = Tracking.GetColorObject(firstFrame, new System.Drawing.Rectangle(iX, iY, iWidth, iHeight));
-        }
-
-        private void display_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (isPressed)
-            {
-                endingPoint = e.GetPosition(Grid);
-                endDisplay = e.GetPosition(display);
-                var x = startingPoint.X < endingPoint.X ? startingPoint.X : endingPoint.X;
-                var y = startingPoint.Y < endingPoint.Y ? startingPoint.Y : endingPoint.Y;
-                rectangle.Width = Math.Abs(startingPoint.X - endingPoint.X);
-                rectangle.Height = Math.Abs(startingPoint.Y - endingPoint.Y);
-                rectangle.Margin = new Thickness(x, y, 0, 0);
-            }
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            if (thread != null)
-            {
-                thread.Abort();
-                thread = null;
-                //capture.Dispose();
-                //capture = new Capture("DSCN3998.MOV");
-                //firstFrame = capture.QuerySmallFrame();
-                //display.Source = ToBitmapSource(firstFrame);
-                StartButton.Content = "Start";
-            }
-            else
-            {
-                thread = new Thread(new ThreadStart(processingThread));
-                thread.Start();
-                StartButton.Content = "Restart";
-            }
+            thread = new Thread(new ThreadStart(processingThread));
+            thread.Start();
         }
     }
 }

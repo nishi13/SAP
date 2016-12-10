@@ -1,6 +1,7 @@
 ﻿using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using SAP.Models;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -12,28 +13,104 @@ namespace SAP
 {
     class Tracking
     {
-        private static int HsvThreshold = 300;
+        private static int HsvThreshold = 400;
         private static CascadeClassifier faceCassifier = new CascadeClassifier("haarcascade_frontalface_alt_tree.xml");
         private static CascadeClassifier handCassifier = new CascadeClassifier("handHaar.xml");
 
-        public static Image<Bgr, byte> Face (Image<Bgr, byte> image)
+        public static List<Face> Face (Image<Bgr, byte> image, List<Face> faces)
         {
-            var faces = faceCassifier.DetectMultiScale(image, 1.1, 3);
-            foreach(var face in faces)
+            var facesPosition = faceCassifier.DetectMultiScale(image, 1.025, 4);
+            foreach(var position in facesPosition)
             {
-                image.Draw(face, new Bgr(0, 0, 255), 2);
+                var isNew = true;
+                var x = position.Left + position.Width / 2;
+                var y = position.Top + position.Height / 2;
+                var err = (position.Width * position.Width) / 4;
+                foreach (var face in faces)
+                {
+                    var x2 = position.Left + position.Width / 2;
+                    var y2 = position.Top + position.Height / 2;
+                    if ((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y) < err)
+                    {
+                        face.Position = position;
+                        face.Color = GetColorObject(image.Mat, position);
+                        isNew = false;
+                        break;
+                    }
+                }
+                if (isNew)
+                {
+                    var color = GetColorObject(image.Mat, position);
+                    faces.Add(new Face() { Position = position, Color = color });
+                }
             }
-            return image;
+            return faces;
         }
 
-        public static Image<Bgr, byte> Hands(Image<Bgr, byte> image)
+        public static List<Hand> Hands(Image<Bgr, byte> image, List<Hand> hands)
         {
-            var hands = handCassifier.DetectMultiScale(image, 1.1, 3);
+            var handsPosition = handCassifier.DetectMultiScale(image, 1.025, 4);
+            foreach (var position in handsPosition)
+            {
+                var isNew = true;
+                var x = position.Left + position.Width / 2;
+                var y = position.Top + position.Height / 2;
+                var err = (position.Width * position.Width + position.Height * position.Height) / 4;
+                foreach (var hand in hands)
+                {
+                    var x2 = position.Left + position.Width / 2;
+                    var y2 = position.Top + position.Height / 2;
+                    if ((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y) < err)
+                    {
+                        hand.Position = position;
+                        hand.Color = GetColorObject(image.Mat, position);
+                        isNew = false;
+                        break;
+                    }
+                }
+                if (isNew)
+                {
+                    var color = GetColorObject(image.Mat, position);
+                    hands.Add(new Hand() { Position = position, Color = color });
+                }
+            }
+            return hands;
+        }
+
+        public static Image<Bgr, byte> DrawRaw (Mat image)
+        {
+            var retImage = image.ToImage<Bgr, byte>();
+            var faces = faceCassifier.DetectMultiScale(image, 1.1, 0);
+            foreach (var face in faces)
+            {
+                var rect = face;
+                retImage.Draw(rect, new Bgr(255, 0, 0), 1);
+            }
+            var hands = handCassifier.DetectMultiScale(image, 1.1, 0);
             foreach (var hand in hands)
             {
-                image.Draw(hand, new Bgr(0, 0, 255), 2);
+                var rect = hand;
+                retImage.Draw(rect, new Bgr(255, 0, 255), 1);
             }
-            return image;
+            return retImage;
+        }
+
+        public static Image<Bgr, byte> DrawRectangles (Mat image, List<Face> faces, List<Hand> hands)
+        {
+            var retImage = image.ToImage<Bgr, byte>();
+            foreach (var face in faces)
+            {
+                var rect = face.Position;
+                retImage.Draw("Face", new Point(rect.Left, rect.Top - 2), FontFace.HersheySimplex, 1, new Bgr(0, 0, 255));
+                retImage.Draw(rect, new Bgr(0, 0, 255), 2);
+            }
+            foreach (var hand in hands)
+            {
+                var rect = hand.Position;
+                retImage.Draw("Hand", new Point(rect.Left, rect.Top - 2), FontFace.HersheySimplex, 1, new Bgr(0, 0, 255));
+                retImage.Draw(rect, new Bgr(0, 0, 255), 2);
+            }
+            return retImage;
         }
 
         public static Image<Gray, byte> Motion(Mat prevImage, Mat curImage)
@@ -44,7 +121,7 @@ namespace SAP
             return Blur(image);
         }
 
-        public static Image<Gray, byte> Color(Mat prevImage, Mat curImage, ColorObject obj)
+        public static Image<Gray, byte> Color(Mat curImage, ColorObject obj)
         {
             var image = curImage.ToImage<Hsv, byte>().InRange(obj.MinHsv, obj.MaxHsv);
             return Blur(image);
