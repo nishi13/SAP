@@ -71,6 +71,7 @@ namespace SAP
             firstFrame = capture.QuerySmallFrame();
             prevImage = firstFrame.ToImage<Bgr, byte>();
             display.Source = ToBitmapSource(firstFrame);
+            displayBP.Source = ToBitmapSource(firstFrame);
         }
 
         private void processingThread()
@@ -104,6 +105,7 @@ namespace SAP
                     this.Dispatcher.Invoke((Action)(() =>
                     {
                         display.Source = ToBitmapSource(Tracking.GetBody(prevImage.Mat, image));
+                        displayBP.Source = ToBitmapSource(image);
                     }));
                 }
                 catch (Exception e)
@@ -178,13 +180,13 @@ namespace SAP
                 //capture = new Capture("DSCN3998.MOV");
                 //firstFrame = capture.QuerySmallFrame();
                 //display.Source = ToBitmapSource(firstFrame);
-                StartButton.Content = "Start";
+                StartButton.Content = "Play";
             }
             else
             {
                 thread = new Thread(new ThreadStart(processingThread));
                 thread.Start();
-                StartButton.Content = "Restart";
+                StartButton.Content = "Pause";
             }
         }
     }
