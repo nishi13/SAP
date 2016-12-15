@@ -104,7 +104,7 @@ namespace SAP
                     prevImage = queryframe.ToImage<Bgr, byte>();
                     this.Dispatcher.Invoke((Action)(() =>
                     {
-                        display.Source = ToBitmapSource(Tracking.GetBody(prevImage.Mat, image));
+                        display.Source = ToBitmapSource(prevImage);
                         displayBP.Source = ToBitmapSource(image);
                     }));
                 }
